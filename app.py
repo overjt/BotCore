@@ -13,7 +13,8 @@ class Bot:
             except Exception as err:
                 print("Error al cargar el conector {name}".format(name=connector), err)
 
-    def process_message(self, message, sender, to, type_msg):
-        print(message, sender, to, type_msg)
+    def process_message(self, message, msg_sender, msg_to, msg_type, connector):
+        #print(message, msg_sender, msg_to, msg_type, connector)
+        connector.send_message(msg_to, message)
 
 Bot()
