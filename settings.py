@@ -1,0 +1,9 @@
+CONNECTORS = ['telegram']
+CONNECTORS_CONFIG = {
+    "telegram": {
+        "bin_path": "/usr/bin/telegram-cli",
+        "pub_path": "/etc/telegram-cli/server.pub"
+    }
+}
+
+NAME = "Kari"
