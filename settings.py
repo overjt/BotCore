@@ -6,4 +6,6 @@ CONNECTORS_CONFIG = {
     }
 }
 
+PLUGINS = ["basic"]
+
 NAME = "Kari"
