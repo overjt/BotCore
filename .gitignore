@@ -89,6 +89,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+chrome_cache/
 
 # Spyder project settings
 .spyderproject
