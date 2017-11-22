@@ -12,7 +12,9 @@ class Bot:
             try:
                 connector_package = importlib.import_module("connectors." + connector)
                 connector_obj = getattr(connector_package, connector.capitalize() + "Connector")
-                connector_obj(self)
+                connector_thread = threading.Thread(target=connector_obj, args=(self,))
+                connector_thread.start()
+                print("Init: ", connector)
             except Exception as err:
                 print("Error al cargar el conector {name}".format(name=connector), err)
 
@@ -25,7 +27,5 @@ class Bot:
                 t.start()
             except Exception as err:
                 print("Error al llamar al plugin {name}".format(name=plugin), err)
-
-        #connector.send_message(msg_to, message)
 
 Bot()

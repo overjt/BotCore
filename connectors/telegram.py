@@ -43,7 +43,7 @@ class TelegramConnector:
                 t = threading.Thread(target=self.bot.process_message, args=(msg.text,msg_sender,msg_to,msg.peer.type, self,))
                 t.start()
             except Exception as err:
-                raise
+                print("Error al enviar TG", err)
 
     def send_message(self, to, message):
         self.sender.send_msg(to["params"].cmd, message)
