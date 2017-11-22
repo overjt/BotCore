@@ -4,7 +4,7 @@ import threading
 
 class Bot:
     def __init__(self):
-        self.name = getattr(settings, 'NAME', 'No Name')
+        self.name = getattr(settings, 'NAME', 'Kari')
         self.connectors = getattr(settings, 'CONNECTORS', [])
         self.plugins = getattr(settings, 'PLUGINS', [])
 

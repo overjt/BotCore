@@ -24,5 +24,4 @@ class WhatsappConnector:
                 print("Error al enviar WA", err)
 
     def send_message(self, to, message):
-        print("enviando msg", to, message)
         self.wa.send_to_whatsapp_id(to["id"], message)

@@ -32,8 +32,8 @@ for (chat in Chats) {
             }
             var sender = {
                 "id": messages[i].__x_senderObj.__x_id,
-                "name": messages[i].__x_senderObj.__x_formattedName,
-                "notifyName": messages[i].__x_senderObj.__x_notifyName,
+                "name": messages[i].__x_senderObj.__x_notifyName || messages[i].__x_senderObj.__x_formattedName,
+                "customName": messages[i].__x_senderObj.__x_formattedName,
                 "own": messages[i].__x_senderObj.__x_isMe
             }
             messages[i].__x_isNewMsg = false;
