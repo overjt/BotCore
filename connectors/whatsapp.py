@@ -25,5 +25,4 @@ class WhatsappConnector:
 
     def send_message(self, to, message):
         print("enviando msg", to, message)
-        #self.wa.send_to_whatsapp_id(to["id"], message)
-        #self.sender.send_msg(to["params"].cmd, message)
+        self.wa.send_to_whatsapp_id(to["id"], message)
