@@ -12,24 +12,18 @@ class WhatsappConnector:
     def main_loop(self,messages):
         for message in messages:
             try:
-                msg_sender = {
-                    "id": "1234",
-                    "name": "WIP",
-                    "params": {}
-                }
-
                 msg_to = {
                     "id": message["id"],
                     "name": message.get("contact", ""),
                     "params": {}
                 }
                 for msg_text in message["messages"]:
-                    t = threading.Thread(target=self.bot.process_message, args=(msg_text["message"],msg_sender,msg_to,"WIP", self,))
+                    t = threading.Thread(target=self.bot.process_message, args=(msg_text["message"],msg_text["sender"],msg_to,"chatWIP", self,))
                     t.start()
             except Exception as err:
                 print("Error al enviar WA", err)
 
     def send_message(self, to, message):
         print("enviando msg", to, message)
-        self.wa.send_to_whatsapp_id(to["id"], message)
+        #self.wa.send_to_whatsapp_id(to["id"], message)
         #self.sender.send_msg(to["params"].cmd, message)

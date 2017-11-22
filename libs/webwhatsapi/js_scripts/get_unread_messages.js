@@ -30,10 +30,17 @@ for (chat in Chats) {
             if (!isChatMessage(messages[i])) {
                 continue
             }
+            var sender = {
+                "id": messages[i].__x_senderObj.__x_id,
+                "name": messages[i].__x_senderObj.__x_formattedName,
+                "notifyName": messages[i].__x_senderObj.__x_notifyName,
+                "own": messages[i].__x_senderObj.__x_isMe
+            }
             messages[i].__x_isNewMsg = false;
             temp.messages.push({
                 message: messages[i].__x_body,
-                timestamp: messages[i].__x_t
+                timestamp: messages[i].__x_t,
+                sender: sender
             });
         }
     }
