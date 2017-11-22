@@ -3,7 +3,7 @@ import requests
 import re
 
 selectors = [
-    'div._eF',  # Fecha nacimiento, lugar de nacimiento
+    'div._XWk',  # Fecha nacimiento, lugar de nacimiento
     '#cwos',  # Calculos
     'div.kpd-ans',  # tasas de desempleo
     '#wob_tm',  # temperatura
