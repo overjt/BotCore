@@ -36,7 +36,7 @@ def findResponse(body):
 
 def googleQuestion(message):
     url = "http://www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
-        tld="com.co",
+        tld="com.ar",
         lang='es',
         query=message,
         start="0",
