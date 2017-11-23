@@ -67,7 +67,7 @@ class WhatsAPIDriver(object):
         self.chrome_options.add_argument("user-data-dir=" + os.path.dirname(sys.argv[0]) + 'chrome_cache' + '/' +  username )
         self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
         self.driver.get(self._URL)
-        self.driver.implicitly_wait(10)
+        self.driver.implicitly_wait(1)
 
     def firstrun(self):
         "Saves QRCode and waits for it to go away"
@@ -124,6 +124,6 @@ class WhatsAPIDriver(object):
                 messages = self.view_unread()
                 if messages != []:
                     callback_function(messages)
-                time.sleep(5)
+                time.sleep(1)
         except KeyboardInterrupt:
             print("Exited")
