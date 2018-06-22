@@ -26,11 +26,11 @@ class TelegramConnector:
                     continue  # is not a message.
                 if msg.own:  # the bot has send this message.
                     continue # we don't want to process this message.
-
                 msg_sender = {
                     "id": msg.sender.id,
                     "name": msg.sender.name,
-                    "params": msg.sender
+                    "params": msg.sender,
+                    "is_admin": True if str(msg.sender.peer_id) in CONNECTORS_CONFIG['telegram']['admin_list'] else False
                 }
 
                 msg_to = {
