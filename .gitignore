@@ -104,3 +104,4 @@ chrome_cache/
 # mypy
 .mypy_cache/
 .vscode/
+settings.py
