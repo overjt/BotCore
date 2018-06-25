@@ -10,7 +10,6 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     found = evalRegex(regex, message)
     if found:
         res = client.query(found)
-        msg = ""
         for pod in res.pods:
             if pod.primary or pod.title in ["Result"] or re.search('plot', pod.title, re.IGNORECASE):
                 for sub in pod.subpods:
