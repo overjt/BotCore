@@ -28,3 +28,8 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
             start=START.strftime("%Y-%m-%d %H:%M:%S"),
         )
         connector.send_message(msg_to, msg_time)
+    elif message.lower() == ".ping":
+        connector.send_message(msg_to, "pong")
+    elif message.lower() == ".test":
+        connector.send_image(msg_to, "media/images/test.png", "Testing, testing...")
+

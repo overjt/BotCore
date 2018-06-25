@@ -30,13 +30,15 @@ class TelegramConnector:
                     "id": msg.sender.id,
                     "name": msg.sender.name,
                     "params": msg.sender,
+                    "message_id": msg.id,
                     "is_admin": True if str(msg.sender.peer_id) in CONNECTORS_CONFIG['telegram']['admin_list'] else False
                 }
 
                 msg_to = {
                     "id": msg.peer.id,
                     "name": msg.peer.name,
-                    "params": msg.peer
+                    "params": msg.peer,
+                    "message_id": msg.id,
                 }
 
                 self.sender.status_online()
@@ -45,5 +47,14 @@ class TelegramConnector:
             except Exception as err:
                 print("Error al enviar TG", err)
 
-    def send_message(self, to, message):
-        self.sender.send_msg(to["params"].cmd, message)
+    def send_message(self, to, message, is_reply = False):
+        if is_reply:
+            self.sender.reply(to["message_id"], message)
+        else:
+            self.sender.send_msg(to["params"].cmd, message)
+    
+    def send_image(self, to, img_path, caption=None, is_reply = False):
+        if is_reply:
+            self.sender.reply_photo(to["message_id"], img_path, caption)
+        else:
+            self.sender.send_photo(to["params"].cmd, img_path, caption)
