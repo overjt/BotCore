@@ -105,3 +105,4 @@ chrome_cache/
 .mypy_cache/
 .vscode/
 settings.py
+media/images/temp/

@@ -1,6 +1,8 @@
 from pyquery import PyQuery as pq
+from settings import CREDENTIALS
+from utils import downloadImage, evalRegex
 import requests
-import re
+import random
 
 selectors = [
     'div._XWk',  # Fecha nacimiento, lugar de nacimiento
@@ -55,13 +57,55 @@ def googleQuestion(message):
     return findResponse(r.text)
 
 
+def googleImage(text):
+    params = {
+        "key": CREDENTIALS["google"],
+        "q": text,
+        "searchType": 'image',
+        "cx": "13192483152618313298:4ggaqm_1t0k",
+        "alt": "json",
+        "num": 10,
+        "start": 1
+    }
+    try:
+        r = requests.get(
+            "https://www.googleapis.com/customsearch/v1", params=params)
+        data = r.json()
+        if data["searchInformation"]["totalResults"] == str(0):
+            return {
+                "type": "text",
+                "message": "No hay resultados para '{text}'".format(text=text)
+            }
+        img = random.choice(data["items"])
+        return {
+            "type": "image",
+            "image": img
+        }
+    except Exception as err:
+        print("[GoogleImage]", err)
+        return {
+            "type": "text",
+            "message": "Error al contactar el servidor. Por favor, intenta mas tarde."
+        }
+
+
 def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     regex = "{bot_name},? (.*?)\?$".format(bot_name=bot.name)
-    try:
-        found = re.search(regex, message, re.IGNORECASE).group(1)
-    except AttributeError:
-        found = ''
-    if found != '':
+    found = evalRegex(regex, message)
+    if found:
         response = googleQuestion(found)
         if response:
-            connector.send_message(msg_to, response)
+            connector.send_message(msg_to, response, is_reply=True)
+    else:
+        regex = "(?:^{bot_name} |^\.)img (.*)$".format(bot_name=bot.name.lower())
+        found = evalRegex(regex, message)
+        if found:
+            response = googleImage(found)
+            if response:
+                if response["type"] == "image":
+                    img_path = downloadImage(response["image"]["link"])
+                    connector.send_image(
+                        msg_to, img_path, is_reply=True)
+                else:
+                    connector.send_message(
+                        msg_to, response["message"], is_reply=True)

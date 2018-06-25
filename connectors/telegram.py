@@ -26,6 +26,8 @@ class TelegramConnector:
                     continue  # is not a message.
                 if msg.own:  # the bot has send this message.
                     continue # we don't want to process this message.
+                if not hasattr(msg, "text"):
+                    continue
                 msg_sender = {
                     "id": msg.sender.id,
                     "name": msg.sender.name,

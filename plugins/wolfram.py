@@ -1,13 +1,11 @@
 import wolframalpha
-import re
-client = wolframalpha.Client("8UXPJ5-3VE2YTT4TL")
+from settings import CREDENTIALS
+from utils import evalRegex
+client = wolframalpha.Client(CREDENTIALS["wolframalpha"])
 
 def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     regex = "^=(.*)$"
-    try:
-        found = re.search(regex, message, re.IGNORECASE).group(1)
-    except AttributeError:
-        found = None
+    found = evalRegex(regex, message)
     if found:
         res = client.query(found)
         msg = ""
