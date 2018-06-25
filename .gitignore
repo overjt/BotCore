@@ -106,3 +106,4 @@ chrome_cache/
 .vscode/
 settings.py
 media/images/temp/
+firefox_cache/
