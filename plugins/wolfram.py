@@ -22,5 +22,3 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
                                 connector.send_image(msg_to, file, sub.plaintext)
                     if send_text and sub.plaintext:
                         connector.send_message(msg_to, str(sub.plaintext))
-            else:
-                print(pod.title)

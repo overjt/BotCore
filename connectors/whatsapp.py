@@ -24,11 +24,11 @@ class WhatsappConnector:
             time.sleep(60)
 
     def send_message(self, to, message, is_reply = False):
-        print(to, message)
-        #self.wa.send_to_whatsapp_id(to["id"], message)
+        self.wa.send_message_to_id(to["id"], message)
     
     def send_image(self, to, img_path, caption=None, is_reply = False):
-        pass
+        #WIP
+        self.wa.send_message_to_id(to["id"], caption)
 
 class NewMessageObserver:
     def __init__(self, connector):
@@ -37,13 +37,22 @@ class NewMessageObserver:
     def on_message_received(self, new_messages):
         for message in new_messages:
             try:
-                print(message)
-                msg_to = {
-                    "id": message.id,
-                    "name": message.chat_id,
-                    "params": {}
+                
+                msg_sender = {
+                    "id": message.sender.id,
+                    "name": message.sender.formatted_name,
+                    "params": message.sender,
+                    "message_id": message.id,
+                    "is_admin": True if str(message.sender.id) in CONNECTORS_CONFIG['whatsapp']['admin_list'] else False
                 }
-                t = threading.Thread(target=self.connector.bot.process_message, args=(message.content,message.sender,msg_to,"chatWIP", self.connector,))
+                msg_to = {
+                    "id": message.chat_id,
+                    "name": message.chat_id,
+                    "params": {},
+                    "message_id": message.id,
+                }
+
+                t = threading.Thread(target=self.connector.bot.process_message, args=(message.content,msg_sender,msg_to,"chatWIP", self.connector,))
                 t.start()
             except Exception as err:
                 print("Error al enviar WA", err)
