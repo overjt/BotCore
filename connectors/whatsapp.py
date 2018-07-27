@@ -37,10 +37,10 @@ class NewMessageObserver:
     def on_message_received(self, new_messages):
         for message in new_messages:
             try:
-                
+
                 msg_sender = {
                     "id": message.sender.id,
-                    "name": message.sender.formatted_name,
+                    "name": getattr(message.sender, 'push_name', message.sender.formatted_name),
                     "params": message.sender,
                     "message_id": message.id,
                     "is_admin": True if str(message.sender.id) in CONNECTORS_CONFIG['whatsapp']['admin_list'] else False
