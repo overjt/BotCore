@@ -26,9 +26,8 @@ class WhatsappConnector:
     def send_message(self, to, message, is_reply = False):
         self.wa.send_message_to_id(to["id"], message)
     
-    def send_image(self, to, img_path, caption=None, is_reply = False):
-        #WIP
-        self.wa.send_message_to_id(to["id"], caption)
+    def send_image(self, to, img_path, caption="", is_reply = False):
+        self.wa.send_media(img_path, to["id"], caption)
 
 class NewMessageObserver:
     def __init__(self, connector):

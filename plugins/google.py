@@ -38,7 +38,7 @@ def findResponse(body):
 
 def googleQuestion(message):
     url = "http://www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
-        tld="com.ar",
+        tld="com.co",
         lang='es',
         query=message,
         start="0",
@@ -96,6 +96,8 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
         response = googleQuestion(found)
         if response:
             connector.send_message(msg_to, response, is_reply=True)
+        else:
+            connector.send_message(msg_to, "Ni puta idea", is_reply=True)
     else:
         regex = "(?:^{bot_name} |^\.)img (.*)$".format(bot_name=bot.name.lower())
         found = evalRegex(regex, message)
