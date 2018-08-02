@@ -19,39 +19,34 @@ class WhatsappConnector:
                 os.makedirs(profile)
             self.wa.save_firefox_profile(True)
 
-        self.wa.subscribe_new_messages(NewMessageObserver(self))
+        #self.wa.subscribe_new_messages(NewMessageObserver(self))
         while True:
-            time.sleep(60)
+            try:
+                group_messages = self.wa.get_unread()
+                for group_msgs in group_messages:
+                    for message in group_msgs.messages:
+                        msg_sender = {
+                            "id": message.sender.id,
+                            "name": getattr(message.sender, 'push_name', message.sender.formatted_name),
+                            "params": message.sender,
+                            "message_id": message.id,
+                            "is_admin": True if str(message.sender.id) in CONNECTORS_CONFIG['whatsapp']['admin_list'] else False
+                        }
+                        msg_to = {
+                            "id": message.chat_id,
+                            "name": message.chat_id,
+                            "params": {},
+                            "message_id": message.id,
+                        }
+
+                        t = threading.Thread(target=self.bot.process_message, args=(message.content,msg_sender,msg_to,"chatWIP", self,))
+                        t.start()
+            except Exception as err:
+                print("[WhatsappConnector][NewMessages]", err)
+            time.sleep(0.05)
 
     def send_message(self, to, message, is_reply = False):
         self.wa.send_message_to_id(to["id"], message)
     
     def send_image(self, to, img_path, caption="", is_reply = False):
         self.wa.send_media(img_path, to["id"], caption)
-
-class NewMessageObserver:
-    def __init__(self, connector):
-        self.connector = connector
-    
-    def on_message_received(self, new_messages):
-        for message in new_messages:
-            try:
-
-                msg_sender = {
-                    "id": message.sender.id,
-                    "name": getattr(message.sender, 'push_name', message.sender.formatted_name),
-                    "params": message.sender,
-                    "message_id": message.id,
-                    "is_admin": True if str(message.sender.id) in CONNECTORS_CONFIG['whatsapp']['admin_list'] else False
-                }
-                msg_to = {
-                    "id": message.chat_id,
-                    "name": message.chat_id,
-                    "params": {},
-                    "message_id": message.id,
-                }
-
-                t = threading.Thread(target=self.connector.bot.process_message, args=(message.content,msg_sender,msg_to,"chatWIP", self.connector,))
-                t.start()
-            except Exception as err:
-                print("Error al enviar WA", err)
