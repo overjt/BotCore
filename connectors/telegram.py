@@ -10,6 +10,7 @@ class TelegramConnector:
     
     def __init__(self, bot):
         self.bot = bot
+        self.createTgSender()
         tg = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
@@ -23,9 +24,21 @@ class TelegramConnector:
             self.own_id = None
         self.receiver.start()
         self.receiver.message(self.main_loop)
+    
+    def createTgSender(self):
+        self.sendPort = getOpenPort()
+        self.tgSendFile = Telegram(
+            telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
+            pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'], port=self.sendPort)
+        self.tgSendFile.receiver.start()
+
 
     def main_loop(self, msg):
         try:
+            try:
+                self.sender.mark_read(msg.receiver.id)
+            except:
+                pass
             if msg.event != "message":
                 return
             
@@ -46,6 +59,10 @@ class TelegramConnector:
                         for record in records:
                             self.bot.mongoDB.telegram_uploading_file.find_one_and_update({"_id": record["_id"]}, 
                                  {"$set": {"sent": True}})
+                            try:
+                                self.sender.reply(record["message_id"], "APK Descargada")
+                            except:
+                                pass
                             self.sender.fwd_media(record["peer_id"], msg.id)
                     except Exception as err:
                         print("[Telegram][send_file][main_loop]", err)
@@ -92,22 +109,18 @@ class TelegramConnector:
             self.sender.send_photo(to["params"].cmd, img_path, caption)
 
     def _send_file(self, to, file_path, caption = None):
-        port = getOpenPort()
-        """tgSendFile = Telegram(
-            telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
-            pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'], port=port)
-        rec = tgSendFile.receiver
-        sen = tgSendFile.sender
-        #rec.start()"""
         try:
-            self.sender.send_file(to, file_path, caption)
+            self.tgSendFile.sender.send_file(to, file_path, caption)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][_send_file]", err)
         finally:
             try:
-                #tgSendFile.stop_cli()
+                self.tgSendFile.stop_cli()
+            except:
                 pass
+            try:
+                self.createTgSender()
             except:
                 pass
             
@@ -125,14 +138,16 @@ class TelegramConnector:
                     self.bot.mongoDB.telegram_uploading_file.insert_one({
                         "path": file_path,
                         "peer_id": to["params"].cmd,
-                        "sent": False
+                        "sent": False,
+                        "message_id": to["message_id"]
                     })
                     self._send_file(self.files_cache_group, file_path, file_path)
             else:
                 self.bot.mongoDB.telegram_uploading_file.insert_one({
                     "path": file_path,
                     "peer_id": to["params"].cmd,
-                    "sent": False
+                    "sent": False,
+                    "message_id": to["message_id"]
                 })
                 self._send_file(self.files_cache_group, file_path, file_path)
         except Exception as err:
