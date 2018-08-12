@@ -1,5 +1,6 @@
 import datetime
 import math
+from utils import evalRegex
 START = datetime.datetime.now()
 
 
@@ -32,4 +33,9 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
         connector.send_message(msg_to, "pong")
     elif message.lower() == ".test":
         connector.send_image(msg_to, "media/images/test.png", "Testing, testing...")
+    else:
+        regex = "(?:^{bot_name} |^\.)di (.*)$".format(bot_name=bot.name.lower())
+        found = evalRegex(regex, message)
+        if found:
+            connector.send_message(msg_to, found)
 

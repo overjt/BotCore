@@ -1,5 +1,5 @@
 from gpapi.googleplay import GooglePlayAPI
-from utils import evalRegex
+from utils import downloadImage, evalRegex
 from settings import CREDENTIALS
 from os.path import expanduser
 import os
@@ -61,8 +61,8 @@ if email is None and password is None:
         config = {'email': CREDENTIALS.get("playstoreEmail"), 'password': CREDENTIALS.get("playstorePassword")}
         pickle.dump(config, open(CONFIGFILE, "wb"))
 
-def getApk(packageId):
-    server = GooglePlayAPI('en_US', 'America/New York', DEVICECODE)
+def getApk(packageId, connector, msg_to):
+    server = GooglePlayAPI('es_CO', 'America/Bogota', DEVICECODE)
     try:
         server = do_login(server, email, password)
     except:
@@ -72,13 +72,39 @@ def getApk(packageId):
         }
     try:
         paths = []
+        packageInfo = server.details(packageId)
+        print(packageInfo)
+        msg = """Descargando la siguiente aplicación:
+Nombre: {title}
+Versión: {version}
+Fecha de actualización: {upload_date}""".format(
+            title = packageInfo["title"],
+            version = packageInfo["versionCode"],
+            upload_date = packageInfo["uploadDate"]
+        )
+        try:
+            img_path = downloadImage(packageInfo["images"][0]["url"])
+        except:
+            img_path = None
+
+        if img_path:        
+            connector.send_image(msg_to, img_path, is_reply=True, caption=msg)
+        else:
+            connector.send_message(msg_to, msg, is_reply=True)
         download = server.download(packageId, expansion_files=True)
-        apkpath = os.path.join(STORAGEPATH, download['docId'] + '.apk')
-        if not os.path.isdir(STORAGEPATH):
-            os.makedirs(STORAGEPATH)
-        with open(apkpath, 'wb') as first:
-            for chunk in download.get('file').get('data'):
-                first.write(chunk)
+        apkStoragePath = os.path.join(STORAGEPATH,str(packageInfo["versionCode"]))
+        apkpath = os.path.join(apkStoragePath, download['docId'] + '.apk')
+        if not os.path.isdir(apkStoragePath):
+            os.makedirs(apkStoragePath)
+        
+        if not os.path.isfile(apkpath):
+            apkpathTemp = apkpath + ".temp"
+            if os.path.isfile(apkpathTemp):
+                os.remove(apkpathTemp)
+            with open(apkpathTemp, 'wb') as first:
+                for chunk in download.get('file').get('data'):
+                    first.write(chunk)
+            os.rename(apkpathTemp, apkpath)
         paths.append(apkpath)
 
         for obb in download['additionalData']:
@@ -86,9 +112,15 @@ def getApk(packageId):
             obbpath = os.path.join(STORAGEPATH, download['docId'], name)
             if not os.path.isdir(os.path.join(STORAGEPATH, download['docId'])):
                 os.makedirs(os.path.join(STORAGEPATH, download['docId']))
-            with open(obbpath, 'wb') as second:
-                for chunk in obb.get('file').get('data'):
-                    second.write(chunk)
+
+            if not os.path.isfile(obbpath):
+                obbpathTemp = obbpath + ".temp"
+                if os.path.isfile(obbpathTemp):
+                    os.remove(obbpathTemp)
+                with open(obbpathTemp, 'wb') as second:
+                    for chunk in obb.get('file').get('data'):
+                        second.write(chunk)
+                os.rename(obbpathTemp, obbpath)
             paths.append(obbpath)
         return {
             "type": "files",
@@ -105,7 +137,7 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     regex = "(?:^{bot_name} |^\.)apk (.*)$".format(bot_name=bot.name.lower())
     found = evalRegex(regex, message)
     if found:
-        response = getApk(found)
+        response = getApk(found, connector, msg_to)
         if response:
             if response["type"] == "files":
                 for apkFile in response.get("paths", []):

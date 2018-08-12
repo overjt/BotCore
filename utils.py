@@ -15,8 +15,14 @@ def downloadImage(url):
             os.makedirs(file_path)
         
         file_path = os.path.join(file_path, file_name)
-        with iopen(file_path, 'wb') as file:
-            file.write(r.content)
+        if not os.path.isfile(file_path):
+            file_path_temp = file_path + ".temp"
+            if os.path.isfile(file_path_temp):
+                os.remove(file_path_temp)
+
+            with iopen(file_path_temp, 'wb') as file:
+                file.write(r.content)
+            os.rename(file_path_temp, file_path)
         return file_path
     return None
 
