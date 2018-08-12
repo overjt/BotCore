@@ -3,12 +3,12 @@ from libs.pytg.utils import coroutine
 import sqlite3 as lite
 import threading
 import settings
+import os
 
 class TelegramConnector:
     
     def __init__(self, bot):
         self.bot = bot
-        self.uploading_stack = []
         try:
             con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
             cur = con.cursor()    
@@ -42,8 +42,10 @@ class TelegramConnector:
                     continue
                 
                 if msg.sender.id == msg.receiver.id and msg.sender.id == self.own_id:
-                    if msg.media.type == "document" and len(self.uploading_stack) > 0:
-                        file_path = self.uploading_stack.pop()
+                    if msg.media.type == "document":
+                        file_path = msg.media.caption
+                        if not file_path:
+                            continue
                         try:
                             con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
                             cur = con.cursor()    
@@ -109,8 +111,7 @@ class TelegramConnector:
             else:
                 cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
                 con.commit()
-                self.uploading_stack.append(file_path)
-                self.sender.send_file(self.own_id, file_path)
+                self.sender.send_file(self.own_id, file_path, file_path)
         except Exception as err:
             print("[Telegram][send_file]", err)
         finally:
