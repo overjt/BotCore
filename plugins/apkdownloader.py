@@ -77,10 +77,12 @@ def getApk(packageId, connector, msg_to):
         msg = """Descargando la siguiente aplicación:
 Nombre: {title}
 Versión: {version}
-Fecha de actualización: {upload_date}""".format(
+Fecha de actualización: {upload_date}
+Peso: {installationSize}""".format(
             title = packageInfo["title"],
             version = packageInfo["versionCode"],
-            upload_date = packageInfo["uploadDate"]
+            upload_date = packageInfo["uploadDate"],
+            installationSize = packageInfo["installationSize"]
         )
         try:
             img_path = downloadImage(packageInfo["images"][0]["url"])
@@ -92,7 +94,7 @@ Fecha de actualización: {upload_date}""".format(
         else:
             connector.send_message(msg_to, msg, is_reply=True)
         download = server.download(packageId, expansion_files=True)
-        apkStoragePath = os.path.join(STORAGEPATH,str(packageInfo["versionCode"]))
+        apkStoragePath = os.path.join(STORAGEPATH,str(packageInfo['docId']),str(packageInfo["versionCode"]))
         apkpath = os.path.join(apkStoragePath, download['docId'] + '.apk')
         if not os.path.isdir(apkStoragePath):
             os.makedirs(apkStoragePath)
@@ -100,7 +102,7 @@ Fecha de actualización: {upload_date}""".format(
         if not os.path.isfile(apkpath):
             apkpathTemp = apkpath + ".temp"
             if os.path.isfile(apkpathTemp):
-                os.remove(apkpathTemp)
+                return connector.send_message(msg_to, "Se está descargando, por favor intente mas tarde...", is_reply=True)
             with open(apkpathTemp, 'wb') as first:
                 for chunk in download.get('file').get('data'):
                     first.write(chunk)
@@ -116,7 +118,7 @@ Fecha de actualización: {upload_date}""".format(
             if not os.path.isfile(obbpath):
                 obbpathTemp = obbpath + ".temp"
                 if os.path.isfile(obbpathTemp):
-                    os.remove(obbpathTemp)
+                    return connector.send_message(msg_to, "Se está descargando, por favor intente mas tarde...", is_reply=True)
                 with open(obbpathTemp, 'wb') as second:
                     for chunk in obb.get('file').get('data'):
                         second.write(chunk)
