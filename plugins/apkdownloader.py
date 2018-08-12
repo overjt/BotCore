@@ -5,7 +5,6 @@ from os.path import expanduser
 import os
 import pickle
 from io import open as iopen
-import sqlite3 as lite
 
 HOMEDIR = expanduser("~/.botcoregplay/")
 DEVICECODE = "bacon"
@@ -146,15 +145,9 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
         if len(args) > 1:
             if  args[0] == "rm" and msg_sender.get("is_admin"):
                 try:
-                    con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
-                    cur = con.cursor()
-                    cur.execute("DELETE FROM telegram_file_cache WHERE path like ?", ['%'+args[1]+'%'])
-                    con.commit()
+                    bot.mongoDB.telegram_file_cache.remove({ "path": args[1] })
                 except Exception as err:
                     print("[APKDownloader][process_message]", err)
-                finally:
-                    if con:
-                        con.close()
         else:
             regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)(?:&|$)"
             found_url = evalRegex(regex_url, found)

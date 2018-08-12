@@ -2,27 +2,16 @@ import settings
 import importlib
 import threading
 import os
-import sqlite3 as lite
+from pymongo import MongoClient
 
 class Bot:
     def __init__(self):
         self.name = getattr(settings, 'NAME', 'Kari')
         self.connectors = getattr(settings, 'CONNECTORS', [])
         self.plugins = getattr(settings, 'PLUGINS', [])
-
+        self.mongoClient = MongoClient(settings.MONGOURL)
+        self.mongoDB = self.mongoClient.get_default_database()
         self.clean_temp_files(os.path.join(os.getcwd(), "media"))
-
-        try:
-            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
-            cur = con.cursor()    
-            cur.execute('SELECT SQLITE_VERSION()')           
-            
-        except Exception as err:
-            pass
-            
-        finally:
-            if con:
-                con.close()
 
         for connector in self.connectors:
             try:

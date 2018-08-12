@@ -4,6 +4,7 @@ from io import open as iopen
 import hashlib
 import os
 import base64
+import socket
 
 def downloadImage(url):
     r = requests.get(url)
@@ -69,3 +70,12 @@ def stringToBase64(s):
 
 def base64ToString(b):
     return base64.b64decode(b).decode('utf-8')
+
+def getOpenPort():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(('127.0.0.1',0))
+    s.listen(1)
+    port = s.getsockname()[1]
+    s.close()
+    return port
