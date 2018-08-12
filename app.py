@@ -2,6 +2,7 @@ import settings
 import importlib
 import threading
 import os
+import sqlite3 as lite
 
 class Bot:
     def __init__(self):
@@ -10,6 +11,18 @@ class Bot:
         self.plugins = getattr(settings, 'PLUGINS', [])
 
         self.clean_temp_files(os.path.join(os.getcwd(), "media"))
+
+        try:
+            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+            cur = con.cursor()    
+            cur.execute('SELECT SQLITE_VERSION()')           
+            
+        except Exception as err:
+            pass
+            
+        finally:
+            if con:
+                con.close()
 
         for connector in self.connectors:
             try:

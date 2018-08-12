@@ -1,21 +1,37 @@
 from libs.pytg import Telegram
 from libs.pytg.utils import coroutine
-from settings import CONNECTORS_CONFIG
+import sqlite3 as lite
 import threading
+import settings
 
 class TelegramConnector:
     
     def __init__(self, bot):
         self.bot = bot
+        self.uploading_stack = []
+        try:
+            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+            cur = con.cursor()    
+            cur.execute('CREATE TABLE IF NOT EXISTS telegram_file_cache (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, message_id TEXT);')
+            cur.execute('CREATE TABLE IF NOT EXISTS telegram_uploading_file (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT, peer_id TEXT, sent INTEGER DEFAULT 0);')
+        except Exception as err:
+            pass
+        finally:
+            if con:
+                con.close()
         tg = Telegram(
-            telegram=CONNECTORS_CONFIG['telegram']['bin_path'],
-            pubkey_file=CONNECTORS_CONFIG['telegram']['pub_path'])
+            telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
+            pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
         self.receiver = tg.receiver
         self.sender = tg.sender
+        try:
+            self.own_id = self.sender.get_self()["id"]
+        except:
+            self.own_id = None
         self.receiver.start()
         self.receiver.message(self.main_loop())
 
-    
+
     @coroutine 
     def main_loop(self):
         while True:
@@ -23,8 +39,29 @@ class TelegramConnector:
             try:
 
                 if msg.event != "message":
-                    continue  # is not a message.
-                if msg.own:  # the bot has send this message.
+                    continue
+                
+                if msg.sender.id == msg.receiver.id and msg.sender.id == self.own_id:
+                    if msg.media.type == "document" and len(self.uploading_stack) > 0:
+                        file_path = self.uploading_stack.pop()
+                        try:
+                            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+                            cur = con.cursor()    
+                            cur.execute("INSERT INTO telegram_file_cache VALUES(null,?,?)", [file_path, msg.id])
+                            con.commit()
+                            cur.execute("SELECT peer_id FROM telegram_uploading_file WHERE path = ? and sent = ?", [file_path, '0'])
+                            records = cur.fetchall()
+                            for peer_id in records:
+                                cur.execute("UPDATE telegram_uploading_file set sent = '1' where path = ? and peer_id = ?", [file_path, peer_id[0]])
+                                con.commit()
+                                self.sender.fwd_media(peer_id[0], msg.id)
+                        except Exception as err:
+                            print("[Telegram][send_file][main_loop]", err)
+                        finally:
+                            if con:
+                                con.close()
+
+                if msg.own:
                     continue # we don't want to process this message.
                 if not hasattr(msg, "text"):
                     continue
@@ -33,7 +70,7 @@ class TelegramConnector:
                     "name": msg.sender.name,
                     "params": msg.sender,
                     "message_id": msg.id,
-                    "is_admin": True if str(msg.sender.peer_id) in CONNECTORS_CONFIG['telegram']['admin_list'] else False
+                    "is_admin": True if str(msg.sender.peer_id) in settings.CONNECTORS_CONFIG['telegram']['admin_list'] else False
                 }
 
                 msg_to = {
@@ -62,7 +99,24 @@ class TelegramConnector:
             self.sender.send_photo(to["params"].cmd, img_path, caption)
 
     def send_file(self, to, file_path, is_reply = False):
-        if is_reply:
-            self.sender.reply_file(to["message_id"], file_path)
-        else:
-            self.sender.send_file(to["params"].cmd, file_path)
+        try:
+            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+            cur = con.cursor()    
+            cur.execute("SELECT message_id FROM telegram_file_cache WHERE path = ?", [file_path])
+            message_id = cur.fetchone()
+            if message_id:
+                return self.sender.fwd_media(to["params"].cmd, message_id[0])
+            else:
+                cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
+                con.commit()
+                self.uploading_stack.append(file_path)
+                self.sender.send_file(self.own_id, file_path)
+        except Exception as err:
+            print("[Telegram][send_file]", err)
+        finally:
+            if con:
+                con.close()
+
+
+
+        
