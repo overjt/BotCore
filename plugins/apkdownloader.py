@@ -1,9 +1,10 @@
 from gpapi.googleplay import GooglePlayAPI
-from utils import downloadImage, evalRegex
+from utils import downloadImage, evalRegex, bytes2Human
 from settings import CREDENTIALS
 from os.path import expanduser
 import os
 import pickle
+from io import open as iopen
 
 HOMEDIR = expanduser("~/.botcoregplay/")
 DEVICECODE = "bacon"
@@ -73,7 +74,6 @@ def getApk(packageId, connector, msg_to):
     try:
         paths = []
         packageInfo = server.details(packageId)
-        print(packageInfo)
         msg = """Descargando la siguiente aplicación:
 Nombre: {title}
 Versión: {version}
@@ -82,7 +82,7 @@ Peso: {installationSize}""".format(
             title = packageInfo["title"],
             version = packageInfo["versionCode"],
             upload_date = packageInfo["uploadDate"],
-            installationSize = packageInfo["installationSize"]
+            installationSize = bytes2Human(packageInfo["installationSize"])
         )
         try:
             img_path = downloadImage(packageInfo["images"][0]["url"])
@@ -103,7 +103,7 @@ Peso: {installationSize}""".format(
             apkpathTemp = apkpath + ".temp"
             if os.path.isfile(apkpathTemp):
                 return connector.send_message(msg_to, "Se está descargando, por favor intente mas tarde...", is_reply=True)
-            with open(apkpathTemp, 'wb') as first:
+            with iopen(apkpathTemp, 'wb') as first:
                 for chunk in download.get('file').get('data'):
                     first.write(chunk)
             os.rename(apkpathTemp, apkpath)
@@ -119,7 +119,7 @@ Peso: {installationSize}""".format(
                 obbpathTemp = obbpath + ".temp"
                 if os.path.isfile(obbpathTemp):
                     return connector.send_message(msg_to, "Se está descargando, por favor intente mas tarde...", is_reply=True)
-                with open(obbpathTemp, 'wb') as second:
+                with iopen(obbpathTemp, 'wb') as second:
                     for chunk in obb.get('file').get('data'):
                         second.write(chunk)
                 os.rename(obbpathTemp, obbpath)
