@@ -13,8 +13,7 @@ class TelegramConnector:
         tg = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
-
-
+        self.files_cache_group = "$020000008f6192120000000000000000"
         self.receiver = tg.receiver
         self.sender = tg.sender
         try:
@@ -27,18 +26,17 @@ class TelegramConnector:
 
     def main_loop(self, msg):
         try:
-            #print("recibe mensaje", msg)
             if msg.event != "message":
                 return
             
-            if msg.sender.id == msg.receiver.id and msg.sender.id == self.own_id:
+            if self.files_cache_group == msg.receiver.id and msg.sender.id == self.own_id:
                 if msg.media.type == "document":
                     file_path = msg.media.caption
                     if not file_path:
                         return
                     try:
                         self.bot.mongoDB.telegram_file_cache.insert_one({
-                            "file_path": file_path,
+                            "path": file_path,
                             "message_id": msg.id
                         })
                         records = self.bot.mongoDB.telegram_uploading_file.find({
@@ -46,8 +44,9 @@ class TelegramConnector:
                             "sent": False
                         })
                         for record in records:
-                            record.sent = True
-                            self.sender.fwd_media(record.peer_id, msg.id)
+                            self.bot.mongoDB.telegram_uploading_file.find_one_and_update({"_id": record["_id"]}, 
+                                 {"$set": {"sent": True}})
+                            self.sender.fwd_media(record["peer_id"], msg.id)
                     except Exception as err:
                         print("[Telegram][send_file][main_loop]", err)
 
@@ -94,43 +93,48 @@ class TelegramConnector:
 
     def _send_file(self, to, file_path, caption = None):
         port = getOpenPort()
-        tgSendFile = Telegram(
+        """tgSendFile = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'], port=port)
-        tgSendFile.receiver.start()
+        rec = tgSendFile.receiver
+        sen = tgSendFile.sender
+        #rec.start()"""
         try:
-            tgSendFile.sender.send_file(to, file_path, caption)
+            self.sender.send_file(to, file_path, caption)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][_send_file]", err)
         finally:
-            tgSendFile.stop_cli()
+            try:
+                #tgSendFile.stop_cli()
+                pass
+            except:
+                pass
+            
         
     def send_file(self, to, file_path, is_reply = False):
         try:
-            cur = self.con.cursor() 
             record = self.bot.mongoDB.telegram_file_cache.find_one({"path": file_path})
             if record:
-                message_id  = record.message_id
                 try:
-                    self.sender.fwd_media(to["params"].cmd, message_id)
+                    self.sender.fwd_media(to["params"].cmd, record["message_id"])
                 except Exception as err:
                     self.bot.mongoDB.telegram_file_cache.remove({ "path": file_path })
                     traceback.print_exc()
                     print("[Telegram][send_file][message_id ]", err)
                     self.bot.mongoDB.telegram_uploading_file.insert_one({
-                        "path": file_path
-                        "peer_id": to["params"].cmd
+                        "path": file_path,
+                        "peer_id": to["params"].cmd,
                         "sent": False
                     })
-                    self._send_file(self.own_id, file_path, file_path)
+                    self._send_file(self.files_cache_group, file_path, file_path)
             else:
                 self.bot.mongoDB.telegram_uploading_file.insert_one({
-                    "path": file_path
-                    "peer_id": to["params"].cmd
+                    "path": file_path,
+                    "peer_id": to["params"].cmd,
                     "sent": False
                 })
-                self._send_file(self.own_id, file_path, file_path)
+                self._send_file(self.files_cache_group, file_path, file_path)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][send_file]", err)
