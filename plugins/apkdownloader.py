@@ -156,7 +156,7 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
                     if con:
                         con.close()
         else:
-            regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)[$|&]"
+            regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)(?:&|$)"
             found_url = evalRegex(regex_url, found)
             if found_url:
                 response = getApk(found_url, connector, msg_to)
