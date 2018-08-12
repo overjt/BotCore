@@ -24,8 +24,14 @@ class TelegramConnector:
         tg = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
+
+        tgSendFile = Telegram(
+            telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
+            pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'], port=3567)
         self.receiver = tg.receiver
         self.sender = tg.sender
+        self.senderfiles = tgSendFile.sender
+        tgSendFile.receiver.start()
         try:
             print(self.sender.get_self())
             self.own_id = self.sender.get_self()["id"]
@@ -36,7 +42,7 @@ class TelegramConnector:
 
     def main_loop(self, msg):
         try:
-
+            #print("recibe mensaje", msg)
             if msg.event != "message":
                 return
             
@@ -104,7 +110,7 @@ class TelegramConnector:
             self.sender.send_photo(to["params"].cmd, img_path, caption)
 
     def _send_file(self, to, file_path, caption = None):
-        t = threading.Thread(target=self.sender.send_file, args=(to, file_path, caption,))
+        t = threading.Thread(target=self.senderfiles.send_file, args=(to, file_path, caption,))
         t.start()
 
     def send_file(self, to, file_path, is_reply = False):
