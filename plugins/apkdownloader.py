@@ -66,7 +66,8 @@ def getApk(packageId, connector, msg_to):
     server = GooglePlayAPI('es_CO', 'America/Bogota', DEVICECODE)
     try:
         server = do_login(server, email, password)
-    except:
+    except Exception as err:
+        print("[APKDOWNLOADER][getApk]", err)
         return {
             "type": "text",
             "message": "Error al ingresar al PlayStore"
