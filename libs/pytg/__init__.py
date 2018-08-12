@@ -76,7 +76,7 @@ class Telegram(object):
         args = [
             self._tg_cli, '-R', '-W', '-P', str(port),
             '-k', self._public_key_file, '--json',
-            '--permanent-peer-ids', '--permanent-peer-ids',
+            '--permanent-peer-ids', '--permanent-msg-ids',
         ]
         if custom_cli_args is not None:
             if not isinstance(custom_cli_args, (list, tuple)):

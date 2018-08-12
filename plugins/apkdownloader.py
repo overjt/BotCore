@@ -1,10 +1,11 @@
 from gpapi.googleplay import GooglePlayAPI
 from utils import downloadImage, evalRegex, bytes2Human
-from settings import CREDENTIALS
+import settings
 from os.path import expanduser
 import os
 import pickle
 from io import open as iopen
+import sqlite3 as lite
 
 HOMEDIR = expanduser("~/.botcoregplay/")
 DEVICECODE = "bacon"
@@ -59,7 +60,7 @@ except:
 if email is None and password is None:
     if not os.path.exists(CONFIGDIR):
         os.makedirs(os.path.dirname(CONFIGDIR))
-        config = {'email': CREDENTIALS.get("playstoreEmail"), 'password': CREDENTIALS.get("playstorePassword")}
+        config = {'email': settings.CREDENTIALS.get("playstoreEmail"), 'password': settings.CREDENTIALS.get("playstorePassword")}
         pickle.dump(config, open(CONFIGFILE, "wb"))
 
 def getApk(packageId, connector, msg_to):
@@ -140,12 +141,32 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     regex = "(?:^{bot_name} |^\.)apk (.*)$".format(bot_name=bot.name.lower())
     found = evalRegex(regex, message)
     if found:
-        response = getApk(found, connector, msg_to)
-        if response:
-            if response["type"] == "files":
-                for apkFile in response.get("paths", []):
-                    connector.send_file(
-                        msg_to, apkFile, is_reply=True)
+        found = found.strip()
+        args = found.split(" ")
+        if len(args) > 1:
+            if  args[0] == "rm" and msg_sender.get("is_admin"):
+                try:
+                    con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+                    cur = con.cursor()
+                    cur.execute("DELETE FROM telegram_file_cache WHERE path like ?", ['%'+args[1]+'%'])
+                    con.commit()
+                except Exception as err:
+                    print("[APKDownloader][process_message]", err)
+                finally:
+                    if con:
+                        con.close()
+        else:
+            regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)[$|&]"
+            found_url = evalRegex(regex_url, found)
+            if found_url:
+                response = getApk(found_url, connector, msg_to)
             else:
-                connector.send_message(
-                    msg_to, response["message"], is_reply=True)
+                response = getApk(found, connector, msg_to)
+            if response:
+                if response["type"] == "files":
+                    for apkFile in response.get("paths", []):
+                        connector.send_file(
+                            msg_to, apkFile, is_reply=True)
+                else:
+                    connector.send_message(
+                        msg_to, response["message"], is_reply=True)
