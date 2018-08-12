@@ -201,19 +201,18 @@ class Receiver(object):
 
     @coroutine
     def message(self, function):
-        if not isinstance(function, GeneratorType):
-            raise TypeError('Target must be GeneratorType')
         try:
             while not self._do_quit:
                 self._new_messages.acquire()  # waits until at least 1 message is in the queue.
                 with self._queue_access:
                     message = self._queue.popleft()  # pop oldest item
                     logger.debug('Messages waiting in queue: %d', len(self._queue))
-                function.send(message)
-        except GeneratorExit:
-            pass
+                t = threading.Thread(target=function, args=(message,))
+                t.start()
         except KeyboardInterrupt:
             raise StopIteration
+        except:
+            pass
 	# end def
 
 # end class

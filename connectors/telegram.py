@@ -32,65 +32,64 @@ class TelegramConnector:
         except:
             self.own_id = None
         self.receiver.start()
-        self.receiver.message(self.main_loop())
+        self.receiver.message(self.main_loop)
 
+    def main_loop(self, msg):
+        try:
 
-    @coroutine 
-    def main_loop(self):
-        while True:
-            msg = (yield)
-            try:
-
-                if msg.event != "message":
-                    continue
-                
-                if msg.sender.id == msg.receiver.id and msg.sender.id == self.own_id:
-                    if msg.media.type == "document":
-                        file_path = msg.media.caption
-                        if not file_path:
-                            continue
-                        try:
-                            con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
-                            cur = con.cursor()    
-                            cur.execute("INSERT INTO telegram_file_cache VALUES(null,?,?)", [file_path, msg.id])
+            if msg.event != "message":
+                return
+            
+            if msg.sender.id == msg.receiver.id and msg.sender.id == self.own_id:
+                if msg.media.type == "document":
+                    file_path = msg.media.caption
+                    if not file_path:
+                        return
+                    try:
+                        con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
+                        cur = con.cursor()    
+                        cur.execute("INSERT INTO telegram_file_cache VALUES(null,?,?)", [file_path, msg.id])
+                        con.commit()
+                        cur.execute("SELECT peer_id FROM telegram_uploading_file WHERE path = ? and sent = ?", [file_path, '0'])
+                        records = cur.fetchall()
+                        for peer_id in records:
+                            cur.execute("UPDATE telegram_uploading_file set sent = '1' where path = ? and peer_id = ?", [file_path, peer_id[0]])
                             con.commit()
-                            cur.execute("SELECT peer_id FROM telegram_uploading_file WHERE path = ? and sent = ?", [file_path, '0'])
-                            records = cur.fetchall()
-                            for peer_id in records:
-                                cur.execute("UPDATE telegram_uploading_file set sent = '1' where path = ? and peer_id = ?", [file_path, peer_id[0]])
-                                con.commit()
-                                self.sender.fwd_media(peer_id[0], msg.id)
-                        except Exception as err:
-                            print("[Telegram][send_file][main_loop]", err)
-                        finally:
-                            if con:
-                                con.close()
+                            self.sender.fwd_media(peer_id[0], msg.id)
+                    except Exception as err:
+                        print("[Telegram][send_file][main_loop]", err)
+                    finally:
+                        if con:
+                            con.close()
 
-                if msg.own:
-                    continue # we don't want to process this message.
-                if not hasattr(msg, "text"):
-                    continue
-                msg_sender = {
-                    "id": msg.sender.id,
-                    "name": msg.sender.name,
-                    "params": msg.sender,
-                    "message_id": msg.id,
-                    "is_admin": True if str(msg.sender.peer_id) in settings.CONNECTORS_CONFIG['telegram']['admin_list'] else False
-                }
+            if msg.own:
+                return # we don't want to process this message.
+            if not hasattr(msg, "text"):
+                return
+            msg_sender = {
+                "id": msg.sender.id,
+                "name": msg.sender.name,
+                "params": msg.sender,
+                "message_id": msg.id,
+                "is_admin": True if str(msg.sender.peer_id) in settings.CONNECTORS_CONFIG['telegram']['admin_list'] else False
+            }
 
-                msg_to = {
-                    "id": msg.peer.id,
-                    "name": msg.peer.name,
-                    "params": msg.peer,
-                    "message_id": msg.id,
-                }
+            msg_to = {
+                "id": msg.peer.id,
+                "name": msg.peer.name,
+                "params": msg.peer,
+                "message_id": msg.id,
+            }
 
+            try:
                 self.sender.status_online()
-                t = threading.Thread(target=self.bot.process_message, args=(msg.text,msg_sender,msg_to,msg.peer.type, self,))
-                t.start()
-            except Exception as err:
-                traceback.print_exc()
-                print("Error al enviar TG", err)
+            except:
+                pass
+            t = threading.Thread(target=self.bot.process_message, args=(msg.text,msg_sender,msg_to,msg.peer.type, self,))
+            t.start()
+        except Exception as err:
+            traceback.print_exc()
+            print("Error al enviar TG", err)
 
     def send_message(self, to, message, is_reply = False):
         if is_reply:
@@ -104,6 +103,10 @@ class TelegramConnector:
         else:
             self.sender.send_photo(to["params"].cmd, img_path, caption)
 
+    def _send_file(self, to, file_path, caption = None):
+        t = threading.Thread(target=self.sender.send_file, args=(to, file_path, caption,))
+        t.start()
+
     def send_file(self, to, file_path, is_reply = False):
         try:
             con = lite.connect(getattr(settings, 'DB_NAME', "botcore.db"))
@@ -116,11 +119,11 @@ class TelegramConnector:
                 except Exception as err:
                     cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
                     con.commit()
-                    self.sender.send_file(self.own_id, file_path, file_path)
+                    self._send_file(self.own_id, file_path, file_path)
             else:
                 cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
                 con.commit()
-                self.sender.send_file(self.own_id, file_path, file_path)
+                self._send_file(self.own_id, file_path, file_path)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][send_file]", err)
