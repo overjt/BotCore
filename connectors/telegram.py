@@ -60,3 +60,9 @@ class TelegramConnector:
             self.sender.reply_photo(to["message_id"], img_path, caption)
         else:
             self.sender.send_photo(to["params"].cmd, img_path, caption)
+
+    def send_file(self, to, file_path, is_reply = False):
+        if is_reply:
+            self.sender.reply_file(to["message_id"], file_path)
+        else:
+            self.sender.send_file(to["params"].cmd, file_path)
