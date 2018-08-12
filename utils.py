@@ -3,7 +3,7 @@ import requests
 from io import open as iopen
 import hashlib
 import os
-
+import base64
 
 def downloadImage(url):
     r = requests.get(url)
@@ -63,3 +63,9 @@ def bytes2Human(number_of_bytes):
     number_of_bytes = round(number_of_bytes, precision)
 
     return str(number_of_bytes) + ' ' + unit
+
+def stringToBase64(s):
+    return base64.b64encode(s.encode('utf-8'))
+
+def base64ToString(b):
+    return base64.b64decode(b).decode('utf-8')

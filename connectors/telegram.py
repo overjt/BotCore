@@ -4,6 +4,8 @@ import sqlite3 as lite
 import threading
 import settings
 import os
+import traceback
+from utils import stringToBase64, base64ToString
 
 class TelegramConnector:
     
@@ -25,6 +27,7 @@ class TelegramConnector:
         self.receiver = tg.receiver
         self.sender = tg.sender
         try:
+            print(self.sender.get_self())
             self.own_id = self.sender.get_self()["id"]
         except:
             self.own_id = None
@@ -86,6 +89,7 @@ class TelegramConnector:
                 t = threading.Thread(target=self.bot.process_message, args=(msg.text,msg_sender,msg_to,msg.peer.type, self,))
                 t.start()
             except Exception as err:
+                traceback.print_exc()
                 print("Error al enviar TG", err)
 
     def send_message(self, to, message, is_reply = False):
@@ -107,12 +111,18 @@ class TelegramConnector:
             cur.execute("SELECT message_id FROM telegram_file_cache WHERE path = ?", [file_path])
             message_id = cur.fetchone()
             if message_id:
-                return self.sender.fwd_media(to["params"].cmd, message_id[0])
+                try:
+                    self.sender.fwd_media(to["params"].cmd, message_id[0])
+                except Exception as err:
+                    cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
+                    con.commit()
+                    self.sender.send_file(self.own_id, file_path, file_path)
             else:
                 cur.execute("INSERT INTO telegram_uploading_file VALUES(null,?,?, '0')", [file_path, to["params"].cmd])
                 con.commit()
                 self.sender.send_file(self.own_id, file_path, file_path)
         except Exception as err:
+            traceback.print_exc()
             print("[Telegram][send_file]", err)
         finally:
             if con:
