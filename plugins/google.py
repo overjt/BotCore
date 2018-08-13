@@ -11,7 +11,7 @@ selectors = [
     '#wob_ttm',  # temperatura
     'div.vk_bk.vk_ans',  # conversion de monedas por ejemplo, hora tambien
     'span._Tgc',
-    'div.zloOqf.kno-fb-ctx',
+    #'div.zloOqf.kno-fb-ctx',
     'div.HwtpBd.kno-fb-ctx',
     'ol.lr_dct_wd_ol',  # que es
     '#knowledge-currency__tgt-amount',
