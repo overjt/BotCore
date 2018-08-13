@@ -37,7 +37,7 @@ def findResponse(body):
 
 
 def googleQuestion(message):
-    url = "http://www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
+    url = "https://tbc-proxy.appspot.com/www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
         tld="com.co",
         lang='es',
         query=message,
