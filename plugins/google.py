@@ -11,7 +11,10 @@ selectors = [
     '#wob_ttm',  # temperatura
     'div.vk_bk.vk_ans',  # conversion de monedas por ejemplo, hora tambien
     'span._Tgc',
+    'div.zloOqf.kno-fb-ctx',
+    'div.HwtpBd.kno-fb-ctx',
     'ol.lr_dct_wd_ol',  # que es
+    '#knowledge-currency__tgt-amount',
     'div.vk_sh.vk_gy',  # ubicacion, donde estoy
     # Span wikipedia julian assange testing, hernan botbol, barra a la derecha
     'div.kno-rdesc span',
@@ -90,6 +93,8 @@ def googleImage(text):
 
 
 def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
+    #if not msg_sender.get("is_admin"):
+    #    return
     regex = "{bot_name},? (.*?)\?$".format(bot_name=bot.name)
     found = evalRegex(regex, message)
     if found:
