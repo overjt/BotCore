@@ -8,7 +8,7 @@ selectors = [
     'div._XWk',  # Fecha nacimiento, lugar de nacimiento
     '#cwos',  # Calculos
     'div.kpd-ans',  # tasas de desempleo
-    '#wob_tm',  # temperatura
+    '#wob_ttm',  # temperatura
     'div.vk_bk.vk_ans',  # conversion de monedas por ejemplo, hora tambien
     'span._Tgc',
     'ol.lr_dct_wd_ol',  # que es
@@ -26,18 +26,18 @@ def findResponse(body):
     for selector in selectors:
         response = d(selector).eq(0).text()
         if response != "":
-            if selector == '#wob_tm':
+            if selector == '#wob_ttm':
                 temp = "Temperatura: " + response + " °C"
                 city = d("#wob_loc").eq(0).text()
                 humidity = "Humedad: " + d("#wob_hm").eq(0).text()
-                wind = "Viento: " + d("#wob_ws").eq(0).text()
+                wind = "Viento: " + d("#wob_tws").eq(0).text()
                 response = "▪️ " + city + " ▫️\n" + temp + "\n" + humidity + "\n" + wind
             break
     return response
 
 
 def googleQuestion(message):
-    url = "https://tbc-proxy.appspot.com/www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
+    url = "https://overpp.herokuapp.com/www.google.{tld}/search?hl={lang}&q={query}&start={start}&sa=N&num={num}&ie=UTF-8&oe=UTF-8&nfpr=1&gws_rd=ssl".format(
         tld="com.co",
         lang='es',
         query=message,
