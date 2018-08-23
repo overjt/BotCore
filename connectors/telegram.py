@@ -10,7 +10,7 @@ class TelegramConnector:
     
     def __init__(self, bot):
         self.bot = bot
-        self.createTgSender()
+        #self.createTgSender()
         tg = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
@@ -112,13 +112,15 @@ class TelegramConnector:
 
     def _send_file(self, to, file_path, caption = None):
         try:
-            self.tgSendFile.sender.send_file(to, file_path, caption)
+            pass
+            #self.tgSendFile.sender.send_file(to, file_path, caption)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][_send_file]", err)
         finally:
             try:
-                self.tgSendFile.stop_cli()
+                pass
+                #self.tgSendFile.stop_cli()
             except:
                 pass
             try:
