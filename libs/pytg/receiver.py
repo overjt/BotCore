@@ -209,9 +209,9 @@ class Receiver(object):
                 with self._queue_access:
                     message = self._queue.popleft()  # pop oldest item
                     logger.debug('Messages waiting in queue: %d', len(self._queue))
-                #function.send(message)
-                t = threading.Thread(target=function.send, args=(message,))
-                t.start()
+                function.send(message)
+                #t = threading.Thread(target=function.send, args=(message,))
+                #t.start()
         except GeneratorExit:
             pass
         except KeyboardInterrupt:

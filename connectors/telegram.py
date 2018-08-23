@@ -10,7 +10,7 @@ class TelegramConnector:
     
     def __init__(self, bot):
         self.bot = bot
-        #self.createTgSender()
+        self.createTgSender()
         tg = Telegram(
             telegram=settings.CONNECTORS_CONFIG['telegram']['bin_path'],
             pubkey_file=settings.CONNECTORS_CONFIG['telegram']['pub_path'])
@@ -42,13 +42,13 @@ class TelegramConnector:
                 except:
                     pass
                 if msg.event != "message":
-                    return
+                    continue
                 
                 if self.files_cache_group == msg.receiver.id and msg.sender.id == self.own_id:
                     if msg.media.type == "document":
                         file_path = msg.media.caption
                         if not file_path:
-                            return
+                            continue
                         try:
                             self.bot.mongoDB.telegram_file_cache.insert_one({
                                 "path": file_path,
@@ -70,9 +70,9 @@ class TelegramConnector:
                             print("[Telegram][send_file][main_loop]", err)
 
                 if msg.own:
-                    return # we don't want to process this message.
+                    continue # we don't want to process this message.
                 if not hasattr(msg, "text"):
-                    return
+                    continue
                 msg_sender = {
                     "id": msg.sender.id,
                     "name": msg.sender.name,
@@ -112,15 +112,15 @@ class TelegramConnector:
 
     def _send_file(self, to, file_path, caption = None):
         try:
-            pass
-            #self.tgSendFile.sender.send_file(to, file_path, caption)
+            #pass
+            self.tgSendFile.sender.send_file(to, file_path, caption)
         except Exception as err:
             traceback.print_exc()
             print("[Telegram][_send_file]", err)
         finally:
             try:
-                pass
-                #self.tgSendFile.stop_cli()
+                #pass
+                self.tgSendFile.stop_cli()
             except:
                 pass
             try:
