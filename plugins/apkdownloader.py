@@ -108,7 +108,7 @@ Peso: {installationSize}""".format(
                 for chunk in download.get('file').get('data'):
                     first.write(chunk)
             os.rename(apkpathTemp, apkpath)
-        paths.append(apkpath)
+        paths.append(apkpath.replace('/home/kari/BotCore/media/files/temp/','http://kari.konnectapps.net/apk/'))
 
         for obb in download['additionalData']:
             name = obb['type'] + '.' + str(obb['versionCode']) + '.' + download['docId'] + '.obb'
@@ -124,10 +124,10 @@ Peso: {installationSize}""".format(
                     for chunk in obb.get('file').get('data'):
                         second.write(chunk)
                 os.rename(obbpathTemp, obbpath)
-            paths.append(obbpath)
+            paths.append(obbpath.replace('/home/kari/BotCore/media/files/temp/','http://kari.konnectapps.net/apk/'))
         return {
             "type": "files",
-            "paths": paths
+            "urls": paths
         }
     except Exception as err:
         print("[APKDOWNLOADER]", err)
@@ -141,25 +141,17 @@ def process_message(message, msg_sender, msg_to, msg_type, connector, bot):
     found = evalRegex(regex, message)
     if found:
         found = found.strip()
-        args = found.split(" ")
-        if len(args) > 1:
-            if  args[0] == "rm" and msg_sender.get("is_admin"):
-                try:
-                    bot.mongoDB.telegram_file_cache.remove({ "path": args[1] })
-                except Exception as err:
-                    print("[APKDownloader][process_message]", err)
+        regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)(?:&|$)"
+        found_url = evalRegex(regex_url, found)
+        if found_url:
+            response = getApk(found_url, connector, msg_to)
         else:
-            regex_url = "^https:\/\/play\.google\.com\/(?:.*)id=(.*?)(?:&|$)"
-            found_url = evalRegex(regex_url, found)
-            if found_url:
-                response = getApk(found_url, connector, msg_to)
-            else:
-                response = getApk(found, connector, msg_to)
-            if response:
-                if response["type"] == "files":
-                    for apkFile in response.get("paths", []):
-                        connector.send_file(
-                            msg_to, apkFile, is_reply=True)
-                else:
+            response = getApk(found, connector, msg_to)
+        if response:
+            if response["type"] == "files":
+                for apkFile in response.get("urls", []):
                     connector.send_message(
-                        msg_to, response["message"], is_reply=True)
+                        msg_to, apkFile, is_reply=True)
+            else:
+                connector.send_message(
+                    msg_to, response["message"], is_reply=True)
